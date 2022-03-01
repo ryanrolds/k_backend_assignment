@@ -4,7 +4,7 @@ This solution uses a backend REST API written in Go and PostgreSQL DB. The backe
 
 Search is provided by PostgreSQL full-text search, which can be seen in `./internal/persistence/service.go`. The DB is prepared using [`migrate`](https://github.com/golang-migrate/migrate), which I'm not that happy with; It really should run the migrations inside of a transaction so that if the migration fails the DB is not placed in an inconsistent state. Other [migration tools](https://bun.uptrace.dev/guide/migrations.html#migration-names) I've wrap migrations in transactions.
 
-I spent about 5 hours on this and copied some boilerplate code/files from other personal projects. If I were to spend more time on this the first thing I would do is introduce [`counterfeiter`](https://github.com/maxbrunsfeld/counterfeiter) and write some unit and contract tests. After that, I would write a data generation script that would populate the DB with at least 100k services and 1M versions. Then I would use [Locust](https://locust.io/) to load test the API, especially the FTS search.
+I spent about 5 hours on this and copied some boilerplate code/files from other personal projects. If I were to spend more time on this the first thing I would do is add the ability to sort service fields, which I skipped. Then I would introduce [`counterfeiter`](https://github.com/maxbrunsfeld/counterfeiter) and write some unit and contract tests. After that, I would write a data generation script that would populate the DB with at least 100k services and 1M versions. Then I would use [Locust](https://locust.io/) to load test the API, especially the FTS search.
 
 ## Setup
 
@@ -19,12 +19,14 @@ Start Postgres, run the migrator, and start the remaining services
 ```
 docker-compose up -d postgres
 docker-compose up migrator
-docker-compose up 
+docker-compose up -d
 ```
 
 At this point the backend service should be available at `http://localhost:8080/`.
 
-## API 
+## API
+
+> The commands below assume you have [`jq`](https://stedolan.github.io/jq/) installed. 
 
 #### Fetch single service and versions by service id
 ```
@@ -72,7 +74,7 @@ curl -s http://localhost:8080/services/14f777b2-997e-11ec-b909-0242ac120002 | jq
 
 #### Fetch first page of services
 
-Pagination is supporting using `offset` and `limit` query params. The advantage to using offset vs a page number is that when increasing the limit the client does not loose it's place in the list and simply shows more/less results from the same place in data.
+Pagination is supporting using `offset` and `limit` query params. The advantage to using offset vs a page number is that when increasing the limit the client does not loose it's place in the list and simply shows more/less results from the same place in the data.
 
 ```
 // GET /services?offset=0&limit=5
