@@ -36,6 +36,7 @@ func main() {
 		log.Fatal("POSTGRES_URL env var not provided, exiting")
 	}
 
+	// Create DB connection
 	conn, err := persistence.NewDBConnection(dbUrl)
 	if err != nil {
 		log.Fatalf("Failed to connect to DB (%v), exiting", err)
@@ -54,6 +55,7 @@ func main() {
 	shutdownSignals := make(chan os.Signal, 1)
 	signal.Notify(shutdownSignals, syscall.SIGINT, syscall.SIGTERM)
 
+	// Wait for shutdown signal in background
 	go func() {
 		<-shutdownSignals
 		log.Info("Received shutdown signal, beggining shutdown")
@@ -62,7 +64,14 @@ func main() {
 		cancel()
 	}()
 
+	// Block main thread until all Go routines are done
 	wg.Wait()
+
+	// Now that everything is shutdown, close the DB connection
+	err = conn.Close()
+	if err != nil {
+		log.Errorf("Failed to close DB connection (%v)", err)
+	}
 
 	log.Info("Gracefully shutdown")
 }

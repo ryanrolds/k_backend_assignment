@@ -71,10 +71,5 @@ func (a *API) getService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if service == nil {
-		WriteError(ctx, w, fmt.Errorf("service not found"))
-		return
-	}
-
 	WriteOk(ctx, w, http.StatusOK, service, 1)
 }
